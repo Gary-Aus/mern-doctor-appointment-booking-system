@@ -1,0 +1,92 @@
+name: 自动部署医生预约系统
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  # 构建和测试
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 安装后端依赖
+      run: |
+        cd backend
+        npm ci
+        
+    - name: 安装前端依赖
+      run: |
+        cd frontend
+        npm ci
+        
+    - name: 安装管理端依赖
+      run: |
+        cd admin-portal
+        npm ci
+        
+    - name: 构建前端
+      run: |
+        cd frontend
+        npm run build
+        
+    - name: 构建管理端
+      run: |
+        cd admin-portal
+        npm run build
+        
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: |
+          frontend/dist
+          admin-portal/dist
+          backend/
+
+  # 部署到 Vercel (前端)
+  deploy-frontend:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 部署前端到 Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        working-directory: ./frontend
+        
+  # 部署到 Vercel (管理端)
+  deploy-admin:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 部署管理端到 Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_ADMIN_PROJECT_ID }}
+        working-directory: ./admin-portal
