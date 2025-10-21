@@ -137,7 +137,11 @@ const Login = () => {
       <p className="mt-10 text-zinc-600 text-center w-full">
         Are you a Doctor or Admin?{" "}
         <a
-          href="http://localhost:5174"
+          // href="http://localhost:5174"
+          href={
+            import.meta.env.VITE_ADMIN_URL ||
+            "https://mern-doctor-booking-admin-gqhxylgqn-garys-projects-446e2edc.vercel.app"
+          }
           className="text-primary underline"
           target="_blank"
           rel="noopener noreferrer"
